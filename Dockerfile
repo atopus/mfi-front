@@ -3,11 +3,14 @@ FROM node
 WORKDIR /app
 
 ENV PATH /app/node_modules/.bin:$PATH
+ENV REACT_APP_API_HOST=localhost
+ENV REACT_APP_API_PORT=8080
 
-COPY package.json ./
-COPY package-lock.json ./
+COPY . ./
 
 RUN npm install --silent
 RUN npm install react-script -g --silent
 
-COPY . ./
+RUN npm run build
+
+COPY build .

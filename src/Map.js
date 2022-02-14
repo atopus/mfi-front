@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents, MapConsumer } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 
 import PeakPanel from './Panel'
 
@@ -33,11 +33,9 @@ const LocationMarker = (props) => {
       map.flyTo(e.latlng, map.getZoom());
     },
     moveend: () => {
-      console.log(map.getBounds());
       onRefresh(map);
     },
     zoomend: () => {
-      console.log(map.getBounds());
       onRefresh(map);
     },
     locationfound: (e) => {
@@ -52,13 +50,11 @@ const LocationMarker = (props) => {
 
   return position === null ? null : (
     <Marker position={position}>
-      <Popup>
-        <PeakPanel
-          onCreate={onMarkerCreate}
-          peak={{lat: position.lat.toFixed(4), lon: position.lng.toFixed(4)}}
-          onCancel={onCancel}
-        />
-      </Popup>
+      <PeakPanel
+        onCreate={onMarkerCreate}
+        peak={{lat: position.lat.toFixed(4), lon: position.lng.toFixed(4)}}
+        onCancel={onCancel}
+      />
     </Marker>
   )
 }
@@ -106,7 +102,7 @@ const Map = () => {
         const payload = await response.json();
         setPeaks(...[peaks.filter((_peak) => _peak.id !== peak.id), payload]);
       } else {
-        console.debug(response);
+        console.error(response);
       }
 
     } catch(error) {
@@ -120,9 +116,11 @@ const Map = () => {
       {method: 'DELETE'});
       if(response.ok) {
         setPeaks(peaks.filter(peak => peak.id !== peakId));
+      } else {
+        console.error(response);
       }
     } catch(error) {
-
+      console.error(error);
     }
   }
 
@@ -145,37 +143,40 @@ const Map = () => {
       const query = `n=${box.getNorth()}&s=${box.getSouth()}&w=${box.getWest()}&e=${box.getEast()}`;
       const response = await fetch(`${endpoint}?${query}`, options);
       const data = await response.json();
-      console.log(data);
-      setPeaks(data);
+      // console.log(data); 
+      const existingIds = new Set(peaks.map(p => p.id));
+      setPeaks([...peaks, ...data.filter(d => !existingIds.has(d.id))]);
     } catch(error) {
       //TODO: deal with errors, eg. missing coordinate.
       console.error(error);
     }
   }
 
+  const init = (map) => {
+    if(!initialized) {
+      // console.log("Call loadPeaks.");
+      loadPeaks(map);
+      setInitialized(true);
+    }
+  }
+
   return (
     <MapContainer center={[51.505, -0.09]} zoom={13} className="map"
-    MapPlaceholder={<MapPlaceholder />}>
+    MapPlaceholder={<MapPlaceholder />} whenCreated={init}>
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       {peaks.map((marker, i) => (
           <Marker position={[marker.lat, marker.lon]} key={i}>
-            <PeakPanel peak={marker} onDelete={onDelete} onUpdate={onUpdate} />
+            <PeakPanel
+              peak={marker}
+              onDelete={onDelete}
+              onUpdate={onUpdate}
+            />
           </Marker>
         )
       )}
-      <MapConsumer>
-        {(map) => {
-          if(!initialized) {
-            console.log("Call loadPeaks.");
-            loadPeaks(map);
-            setInitialized(true);
-          }
-          return null;
-        }}
-      </MapConsumer>
       <LocationMarker onCreate={onCreate} onRefresh={onRefresh} />
     </MapContainer>
   );
