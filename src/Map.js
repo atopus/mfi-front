@@ -79,7 +79,7 @@ const Map = () => {
         const payload = await response.json();
         setPeaks([...peaks, payload]);
       } else {
-        console.debug(response);
+        console.error(response);
       }
 
     } catch(error) {
@@ -89,19 +89,16 @@ const Map = () => {
 
   const onUpdate = async (peak) => {
     try {
-      const options ={
+      const options = {
         method: 'PUT',
         headers: {
           "Accept": "application/json",
           "Content-Type": "application/json"
         },
         body: JSON.stringify(peak)
-      }
+      };
       const response = await fetch(`${API_ENDPOINT}/peaks/${peak.id}/`, options);
-      if(response.ok) {
-        const payload = await response.json();
-        setPeaks(...[peaks.filter((_peak) => _peak.id !== peak.id), payload]);
-      } else {
+      if(!response.ok) {
         console.error(response);
       }
 

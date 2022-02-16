@@ -8,6 +8,7 @@ const PeakPanel = ({ peak, onDelete, onCreate, onUpdate, onCancel }) => {
   const [editing, setEditing] = useState(isCreating);
   const [name, setName] = useState(peak?.name || '');
   const [altitude, setAltitude] = useState(peak?.altitude || '');
+  const [deleted, setDeleted] = useState(false);
 
   const handleChangeName = (event) => {
     setName(event.target.value);
@@ -17,8 +18,8 @@ const PeakPanel = ({ peak, onDelete, onCreate, onUpdate, onCancel }) => {
     setAltitude(event.target.value);
   }
 
-  return (
-    <Popup style={{ minWidth: '200px' }}>
+  return deleted ? null : (
+    <Popup>
 
       {editing && <h3>{isCreating ? 'Create' : 'Update'} a peak:</h3>}
 
@@ -103,7 +104,10 @@ const PeakPanel = ({ peak, onDelete, onCreate, onUpdate, onCancel }) => {
         ) : (
         <div style={{display:'flex', flexDirection: 'row', justifyContent: 'space-evenly'}}>
           <button type="button" className="btn btn-outline-danger btn-sm"
-            onClick={() => onDelete(peak.id)}
+            onClick={() => {
+              onDelete(peak.id);
+              setDeleted(true);
+            }}
           >
             Delete
           </button>
